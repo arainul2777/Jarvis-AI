@@ -55,3 +55,77 @@ Check out: [Flutter App](https://github.com/Aryan-0001/Jarvis-AI/tree/main/Jarvi
 
 ---
 ---
+You Speak
+
+Pi Al Voice Assistant
+
+"Hey Jarvis, মানে থেভেদ দাত অবি বাগার সাসহি// pubspec.yaml
+dependencies:
+  wake_word: ^latest   // অথবা custom package
+
+// Dart কোড
+void initWakeWord() async {
+  final detector = WakeWordDetector();
+  await detector.initialize(model: 'hey_jarvis.tflite');
+  
+  detector.onWakeWord.listen((_) {
+    print("Hey Jarvis detected!");
+    startListeningForCommand();
+  });
+  
+  detector.start();
+}// dependencies
+implementation 'com.alphacephei:vosk-android:0.3.45'
+
+// কোড
+val model = Model(assets.openFd("vosk-model-bn-0.42"))  // বাংলা মডেল ডাউনলোড করে assets-এ রাখো
+val recognizer = KaldiRecognizer(model, 16000.0f)
+
+fun processAudio(buffer: ShortArray) {
+    if (recognizer.acceptWaveForm(buffer)) {
+        val text = recognizer.result
+        if (text.contains("মাকে মেসেজ পাঠা")) {
+            sendMessageToMom("আমি বাজার থেকে ফিরছি")
+        }
+    }
+}// AndroidManifest.xml-এ যোগ করো
+<service android:name=".JarvisAccessibilityService"
+    android:permission="android.permission.BIND_ACCESSIBILITY_SERVICE"
+    android:label="Jarvis Automation">
+    <intent-filter>
+        <action android:name="android.accessibilityservice.AccessibilityService" />
+    </intent-filter>
+    <meta-data android:name="android.accessibilityservice"
+        android:resource="@xml/accessibility_service_config" />
+</service>
+
+// accessibility_service_config.xml
+<accessibility-service xmlns:android="http://schemas.android.com/apk/res/android"
+    android:accessibilityEventTypes="typeAllMask"
+    android:accessibilityFeedbackType="feedbackAllMask"
+    android:canRetrieveWindowContent="true"
+    android:description="Jarvis sends messages and controls phone" />
+
+// Service ক্লাস
+class JarvisAccessibilityService : AccessibilityService() {
+
+    fun sendMessageToContact(contactName: String, message: String) {
+        // UI অটোমেশন: Messages অ্যাপ খোলা → contact সার্চ → টাইপ → সেন্ড
+        // performGlobalAction(GLOBAL_ACTION_HOME)  // হোম যাও
+        // ... (এটা লম্বা, GestureDescription দিয়ে ক্লিক/টাইপ করতে হয়)
+    }
+}private lateinit var tts: TextToSpeech
+
+override fun onCreate() {
+    tts = TextToSpeech(this) { status ->
+        if (status == TextToSpeech.SUCCESS) {
+            tts.language = Locale("bn", "BD")  // বাংলা
+            tts.setSpeechRate(1.0f)
+            speak("মেসেজ পাঠানো হয়েছে, মা")
+        }
+    }
+}
+
+fun speak(text: String) {
+    tts.speak(text, TextToSpeech.QUEUE_FLUSH, null, null)
+}
